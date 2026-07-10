@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER") // "USER" or "ADMIN"
+  createdAt    DateTime @default(now())
+  results      Result[]
+}
+
+model Quiz {
+  id               String     @id @default(cuid())
+  title            String
+  description      String?
+  isTimerEnabled   Boolean    @default(false)
+  timeLimitMinutes Int?
+  shuffleQuestions Boolean    @default(false)
+  shuffleAnswers   Boolean    @default(false)
+  showPlayerAnalytics Boolean  @default(true)
+  createdAt        DateTime   @default(now())
+  questions        Question[]
+  results          Result[]
+}
+
+model Question {
+  id                 String @id @default(cuid())
+  quizId             String
+  text               String
+  explanation        String?
+  options            String // Stored as a JSON string for SQLite compatibility
+  correctOptionIndex Int
+  quiz               Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model Result {
+  id             String   @id @default(cuid())
+  userId         String
+  quizId         String
+  score          Int
+  totalQuestions Int
+  answers        String?  // Stored as JSON string
+  completedAt    DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
