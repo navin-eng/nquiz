@@ -112,8 +112,8 @@ export function QuizList({ initialQuizzes }: { initialQuizzes: QuizWithCounts[] 
 
       {/* Create Quiz Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-panel glass-card w-full max-w-md relative animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md relative animate-slide-up bg-background border border-white/10 rounded-2xl p-6 shadow-2xl">
             <button 
               onClick={closeModal}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
