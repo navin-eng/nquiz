@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
@@ -10,6 +11,12 @@ export function Navbar() {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="glass-panel glass-card w-full flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 mb-8">
@@ -41,9 +48,12 @@ export function Navbar() {
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="icon-btn"
           title="Toggle Theme"
-          suppressHydrationWarning
         >
-          {theme === 'dark' ? <Sun size={18} className="text-warning-light" /> : <Moon size={18} className="text-primary" />}
+          {mounted ? (
+            theme === 'dark' ? <Sun size={18} className="text-warning-light" /> : <Moon size={18} className="text-primary" />
+          ) : (
+            <div style={{ width: 18, height: 18 }} /> // Placeholder to prevent layout shift
+          )}
         </button>
 
         <div className="hidden md:flex items-center gap-2 text-sm text-gray-400">
