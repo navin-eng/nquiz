@@ -224,153 +224,156 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
   );
 
   return (
-    <div className={`w-full animate-fade-in ${isFullscreen ? 'h-screen flex flex-col justify-center items-center bg-black p-4 z-50 fixed inset-0 overflow-y-auto' : 'max-w-4xl mx-auto mt-8 px-4'}`}>
-      <div className={`w-full ${isFullscreen ? 'max-w-4xl mx-auto' : ''}`}>
-        <div className="glass-panel glass-card mb-6 p-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div>
-            <h1 className="text-xl font-bold">{quiz.title}</h1>
-            <div className="text-sm text-gray-400">
-              Question {currentIndex + 1} of {preparedQuestions.length}
-            </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {timeLeft !== null && (
-                <div className={`pill font-mono text-lg ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-primary'}`}>
-                  <Clock size={20} />
-                  {formatTime(timeLeft)}
-                </div>
-              )}
-              <button 
-                onClick={toggleFullscreen}
-                className="icon-btn"
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              >
-                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-              </button>
-            </div>
-          </div>
-          <div className="bg-black/20 rounded-lg overflow-hidden h-1">
-            <div className="h-1 bg-primary transition-all" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-
-        {isLast && (
+    <>
+      <div className={`w-full animate-fade-in ${isFullscreen ? 'h-screen flex flex-col justify-center items-center bg-black p-4 z-50 fixed inset-0 overflow-y-auto' : 'max-w-4xl mx-auto mt-8 px-4'}`}>
+        <div className={`w-full ${isFullscreen ? 'max-w-4xl mx-auto' : ''}`}>
           <div className="glass-panel glass-card mb-6 p-4">
-            {analyticsPanel}
-          </div>
-        )}
-
-        <div className="glass-panel glass-card mb-6">
-          <h2 className="text-2xl font-semibold mb-6">{currentQ.text}</h2>
-          <div className="flex flex-col gap-3">
-            {answers[currentQ.id] === -1 && (
-              <div className="text-danger text-sm font-semibold mb-2">Time ran out!</div>
-            )}
-            {currentQ.displayOptions.map((opt) => {
-              const hasAnswered = answers[currentQ.id] !== undefined;
-              const isSelected = answers[currentQ.id] === opt.originalIndex;
-              const isCorrectOption = currentQ.correctOptionIndex === opt.originalIndex;
-              
-              let optionClass = "";
-              let Icon = null;
-
-              if (hasAnswered) {
-                if (isSelected && isCorrectOption) {
-                  optionClass = "is-correct";
-                  Icon = <CheckCircle2 className="text-success shrink-0" />;
-                } else if (isSelected && !isCorrectOption && opt.originalIndex !== -1) {
-                  optionClass = "is-wrong";
-                  Icon = <XCircle className="text-danger shrink-0" />;
-                } else if (!isSelected && isCorrectOption) {
-                  optionClass = "is-correct";
-                  Icon = <CheckCircle2 className="text-success/50 shrink-0" />;
-                } else {
-                  optionClass = "is-muted";
-                }
-              }
-
-              return (
-                <button
-                  key={opt.originalIndex}
-                  onClick={() => handleSelect(currentQ.id, opt.originalIndex)}
-                  disabled={hasAnswered}
-                  className={`option-button ${optionClass}`}
-                >
-                  <span>{opt.text}</span>
-                  {Icon}
-                </button>
-              );
-            })}
-          </div>
-          
-          {currentQ.explanation && (
-            <div className="mt-6">
-              {!showExplanation ? (
-                <button 
-                  onClick={() => setShowExplanation(true)}
-                  className="btn btn-secondary text-sm"
-                >
-                  <Lightbulb size={16} /> Show Hint / Explanation
-                </button>
-              ) : (
-                <div className="bg-primary/10 border border-primary/30 p-4 rounded-xl flex gap-3 items-start animate-fade-in">
-                  <Lightbulb className="text-primary mt-0.5 shrink-0" size={18} />
-                  <div>
-                    <p className="text-sm font-semibold text-primary mb-1">Explanation</p>
-                    <p className="text-sm text-gray-300">{currentQ.explanation}</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <div>
+              <h1 className="text-xl font-bold">{quiz.title}</h1>
+              <div className="text-sm text-gray-400">
+                Question {currentIndex + 1} of {preparedQuestions.length}
+              </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {timeLeft !== null && (
+                  <div className={`pill font-mono text-lg ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-primary'}`}>
+                    <Clock size={20} />
+                    {formatTime(timeLeft)}
                   </div>
-                </div>
-              )}
+                )}
+                <button 
+                  onClick={toggleFullscreen}
+                  className="icon-btn"
+                  title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                >
+                  {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                </button>
+              </div>
+            </div>
+            <div className="bg-black/20 rounded-lg overflow-hidden h-1">
+              <div className="h-1 bg-primary transition-all" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+
+          {isLast && (
+            <div className="glass-panel glass-card mb-6 p-4">
+              {analyticsPanel}
             </div>
           )}
-        </div>
 
-        <div className="flex justify-between items-center gap-3">
-          <button
-            onClick={() => {
-              setShowExplanation(false);
-              setCurrentIndex((i) => Math.max(0, i - 1));
-            }}
-            disabled={currentIndex === 0}
-            className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={18} /> Previous
-          </button>
+          <div className="glass-panel glass-card mb-6">
+            <h2 className="text-2xl font-semibold mb-6">{currentQ.text}</h2>
+            <div className="flex flex-col gap-3">
+              {answers[currentQ.id] === -1 && (
+                <div className="text-danger text-sm font-semibold mb-2">Time ran out!</div>
+              )}
+              {currentQ.displayOptions.map((opt) => {
+                const hasAnswered = answers[currentQ.id] !== undefined;
+                const isSelected = answers[currentQ.id] === opt.originalIndex;
+                const isCorrectOption = currentQ.correctOptionIndex === opt.originalIndex;
+                
+                let optionClass = "";
+                let Icon = null;
 
-          {isLast ? (
-            <button 
-              onClick={handleSubmit}
-              className="btn btn-primary"
-              disabled={Object.keys(answers).length < preparedQuestions.length}
-            >
-              Submit Quiz <CheckCircle2 size={18} />
-            </button>
-          ) : (
+                if (hasAnswered) {
+                  if (isSelected && isCorrectOption) {
+                    optionClass = "is-correct";
+                    Icon = <CheckCircle2 className="text-success shrink-0" />;
+                  } else if (isSelected && !isCorrectOption && opt.originalIndex !== -1) {
+                    optionClass = "is-wrong";
+                    Icon = <XCircle className="text-danger shrink-0" />;
+                  } else if (!isSelected && isCorrectOption) {
+                    optionClass = "is-correct";
+                    Icon = <CheckCircle2 className="text-success/50 shrink-0" />;
+                  } else {
+                    optionClass = "is-muted";
+                  }
+                }
+
+                return (
+                  <button
+                    key={opt.originalIndex}
+                    onClick={() => handleSelect(currentQ.id, opt.originalIndex)}
+                    disabled={hasAnswered}
+                    className={`option-button ${optionClass}`}
+                  >
+                    <span>{opt.text}</span>
+                    {Icon}
+                  </button>
+                );
+              })}
+            </div>
+            
+            {currentQ.explanation && (
+              <div className="mt-6">
+                {!showExplanation ? (
+                  <button 
+                    onClick={() => setShowExplanation(true)}
+                    className="btn btn-secondary text-sm"
+                  >
+                    <Lightbulb size={16} /> Show Hint / Explanation
+                  </button>
+                ) : (
+                  <div className="bg-primary/10 border border-primary/30 p-4 rounded-xl flex gap-3 items-start animate-fade-in">
+                    <Lightbulb className="text-primary mt-0.5 shrink-0" size={18} />
+                    <div>
+                      <p className="text-sm font-semibold text-primary mb-1">Explanation</p>
+                      <p className="text-sm text-gray-300">{currentQ.explanation}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center gap-3">
             <button
               onClick={() => {
                 setShowExplanation(false);
-                setCurrentIndex((i) => Math.min(preparedQuestions.length - 1, i + 1));
+                setCurrentIndex((i) => Math.max(0, i - 1));
               }}
-              className="btn btn-primary"
+              disabled={currentIndex === 0}
+              className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next <ChevronRight size={18} />
+              <ChevronLeft size={18} /> Previous
             </button>
+
+            {isLast ? (
+              <button 
+                onClick={handleSubmit}
+                className="btn btn-primary"
+                disabled={Object.keys(answers).length < preparedQuestions.length}
+              >
+                Submit Quiz <CheckCircle2 size={18} />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowExplanation(false);
+                  setCurrentIndex((i) => Math.min(preparedQuestions.length - 1, i + 1));
+                }}
+                className="btn btn-primary"
+              >
+                Next <ChevronRight size={18} />
+              </button>
+            )}
+          </div>
+          
+          {isLast && Object.keys(answers).length < preparedQuestions.length && (
+            <p className="text-sm text-warning mt-4 text-center">
+              Please answer all questions before submitting.
+            </p>
           )}
         </div>
-        
-        {isLast && Object.keys(answers).length < preparedQuestions.length && (
-          <p className="text-sm text-warning mt-4 text-center">
-            Please answer all questions before submitting.
-          </p>
-        )}
       </div>
+
       {quiz.showPlayerAnalytics && !isLast && (
-        <>
+        <div className="fixed inset-0 z-50 pointer-events-none">
           {/* Toggle Button */}
           <button 
             onClick={() => setAnalyticsOpen(true)}
-            className={`fixed right-0 top-1/2 -translate-y-1/2 bg-background border border-white/10 border-r-0 rounded-l-2xl p-3 shadow-2xl transition-transform duration-300 z-40 hover:bg-surface-hover ${analyticsOpen ? 'translate-x-full' : 'translate-x-0'}`}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 bg-background border border-white/10 border-r-0 rounded-l-2xl p-3 shadow-2xl transition-transform duration-300 pointer-events-auto hover:bg-surface-hover ${analyticsOpen ? 'translate-x-full' : 'translate-x-0'}`}
             title="Open Live Analytics"
           >
             <div className="flex flex-col items-center gap-2">
@@ -380,8 +383,8 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
           </button>
 
           {/* Sidebar */}
-          <div className={`fixed right-0 top-0 h-full w-80 bg-background/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${analyticsOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-             <div className="flex justify-between items-center p-6 border-b border-white/10 bg-surface/50">
+          <div className={`absolute right-0 top-0 h-full w-80 bg-background/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out pointer-events-auto ${analyticsOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+             <div className="flex justify-between items-center p-6 border-b border-white/10 bg-surface/50 shrink-0">
                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><BarChart3 size={20} className="text-primary" /> Live Analytics</h3>
                <button onClick={() => setAnalyticsOpen(false)} className="icon-btn" title="Close Analytics">
                  <X size={20} />
@@ -392,8 +395,8 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
                {analyticsPanel}
              </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }

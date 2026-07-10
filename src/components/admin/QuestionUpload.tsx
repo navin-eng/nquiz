@@ -291,32 +291,35 @@ export function QuestionUpload({ quizId }: { quizId: string }) {
           
           <div className="flex flex-col gap-6 max-h-[600px] overflow-y-auto pr-2">
             {previewQuestions.map((q, qIndex) => (
-              <div key={qIndex} className="stat-card flex flex-col gap-4">
-                <div className="input-group !mb-0">
-                  <label className="input-label">Question {qIndex + 1}</label>
-                  <input 
-                    className="input-field w-full"
-                    value={q.text || ""}
-                    onChange={(e) => updatePreviewQuestion(qIndex, "text", e.target.value)}
-                  />
+              <div key={qIndex} className="bg-black/20 border border-white/5 rounded-xl p-5 flex flex-col gap-4 relative group transition-colors hover:border-white/10">
+                <div className="absolute -left-3 -top-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold shadow-lg shadow-primary/20">
+                  {qIndex + 1}
                 </div>
                 
-                <div className="input-group !mb-0">
-                  <label className="input-label flex items-center gap-2">
-                    <Info size={14} /> Explanation (Optional)
-                  </label>
-                  <textarea 
-                    className="input-field w-full resize-y min-h-[60px]"
-                    value={q.explanation || ""}
-                    onChange={(e) => updatePreviewQuestion(qIndex, "explanation", e.target.value)}
+                <div className="pl-4 border-l-2 border-primary/30">
+                  <input 
+                    className="w-full bg-transparent border-b border-transparent hover:border-white/20 focus:border-primary focus:outline-none transition-colors text-lg font-semibold py-1 px-2 -ml-2"
+                    value={q.text || ""}
+                    onChange={(e) => updatePreviewQuestion(qIndex, "text", e.target.value)}
+                    placeholder="Question Text"
                   />
+                  
+                  <div className="flex items-start gap-2 mt-2">
+                    <Info size={14} className="text-gray-500 mt-1.5 shrink-0" />
+                    <textarea 
+                      className="w-full bg-transparent border border-transparent hover:border-white/20 focus:border-white/20 focus:bg-white/5 rounded-lg focus:outline-none transition-all text-sm text-gray-300 py-1 px-2 -ml-2 resize-none min-h-[28px]"
+                      value={q.explanation || ""}
+                      onChange={(e) => updatePreviewQuestion(qIndex, "explanation", e.target.value)}
+                      placeholder="Add an optional explanation here..."
+                      rows={q.explanation ? 2 : 1}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="input-label mb-2 block">Options (Select the radio button for the correct answer)</label>
-                  <div className="flex flex-col gap-3">
+                <div className="mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {q.options?.map((opt: string, optIndex: number) => (
-                      <div key={optIndex} className="flex items-center gap-3">
+                      <div key={optIndex} className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${q.correctOptionIndex === optIndex ? 'bg-success/10 border-success/30' : 'bg-black/20 border-white/5 hover:border-white/10'}`}>
                         <input 
                           type="radio" 
                           name={`correct-${qIndex}`}
@@ -326,30 +329,31 @@ export function QuestionUpload({ quizId }: { quizId: string }) {
                           title="Mark as correct answer"
                         />
                         <input 
-                          className="input-field w-full !py-2"
+                          className="w-full bg-transparent border-none focus:outline-none text-sm"
                           value={opt || ""}
                           onChange={(e) => updatePreviewQuestion(qIndex, "options", e.target.value, optIndex)}
                           placeholder={`Option ${optIndex + 1}`}
                         />
                         <button 
                           onClick={() => removePreviewOption(qIndex, optIndex)}
-                          className="icon-btn"
+                          className="text-gray-500 hover:text-danger p-1 rounded-md hover:bg-danger/10 transition-colors"
                           title="Remove option"
                         >
-                          <X size={16} />
+                          <X size={14} />
                         </button>
                       </div>
                     ))}
                   </div>
-                  <div className="flex justify-between items-center mt-3">
-                    <button onClick={() => addPreviewOption(qIndex)} className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
-                      <Plus size={14} /> Add Option
+                  
+                  <div className="flex justify-between items-center mt-3 px-1">
+                    <button onClick={() => addPreviewOption(qIndex)} className="text-primary text-xs font-semibold hover:underline flex items-center gap-1">
+                      <Plus size={12} /> Add Option
                     </button>
                     <button 
                       onClick={() => shufflePreviewOption(qIndex)} 
-                      className="text-gray-400 text-sm font-medium hover:text-white transition-colors flex items-center gap-1"
+                      className="text-gray-400 text-xs font-medium hover:text-white transition-colors flex items-center gap-1"
                     >
-                      <Shuffle size={14} /> Shuffle
+                      <Shuffle size={12} /> Shuffle Options
                     </button>
                   </div>
                 </div>
