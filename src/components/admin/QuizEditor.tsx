@@ -17,7 +17,9 @@ type QuizType = {
   title: string;
   description: string | null;
   isTimerEnabled: boolean;
+  timerType: string;
   timeLimitMinutes: number | null;
+  timeLimitPerQuestion: number | null;
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
   showPlayerAnalytics: boolean;
@@ -31,7 +33,9 @@ export function QuizEditor({ quiz }: { quiz: QuizType }) {
     title: quiz.title,
     description: quiz.description || "",
     isTimerEnabled: quiz.isTimerEnabled,
+    timerType: quiz.timerType,
     timeLimitMinutes: quiz.timeLimitMinutes || 5,
+    timeLimitPerQuestion: quiz.timeLimitPerQuestion || 30,
     shuffleQuestions: quiz.shuffleQuestions,
     shuffleAnswers: quiz.shuffleAnswers,
     showPlayerAnalytics: quiz.showPlayerAnalytics,
@@ -95,15 +99,42 @@ export function QuizEditor({ quiz }: { quiz: QuizType }) {
             </label>
             
             {settings.isTimerEnabled && (
-              <div className="input-group ml-7 !mb-0">
-                <label className="input-label">Time Limit (Minutes)</label>
-                <input 
-                  type="number" 
-                  min="1"
-                  className="input-field" 
-                  value={settings.timeLimitMinutes}
-                  onChange={(e) => setSettings({ ...settings, timeLimitMinutes: parseInt(e.target.value) || 1 })}
-                />
+              <div className="flex flex-col gap-3 ml-7 mb-3 p-3 bg-black/10 border border-white/5 rounded-xl">
+                <div className="input-group !mb-0">
+                  <label className="input-label text-xs">Timer Type</label>
+                  <select 
+                    className="input-field bg-surface-strong"
+                    value={settings.timerType}
+                    onChange={(e) => setSettings({ ...settings, timerType: e.target.value })}
+                  >
+                    <option value="GLOBAL">Entire Quiz Timer</option>
+                    <option value="PER_QUESTION">Per-Question Timer</option>
+                  </select>
+                </div>
+                
+                {settings.timerType === "GLOBAL" ? (
+                  <div className="input-group !mb-0">
+                    <label className="input-label text-xs">Time Limit (Minutes)</label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      className="input-field bg-surface-strong" 
+                      value={settings.timeLimitMinutes}
+                      onChange={(e) => setSettings({ ...settings, timeLimitMinutes: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+                ) : (
+                  <div className="input-group !mb-0">
+                    <label className="input-label text-xs">Seconds Per Question</label>
+                    <input 
+                      type="number" 
+                      min="5"
+                      className="input-field bg-surface-strong" 
+                      value={settings.timeLimitPerQuestion}
+                      onChange={(e) => setSettings({ ...settings, timeLimitPerQuestion: parseInt(e.target.value) || 10 })}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

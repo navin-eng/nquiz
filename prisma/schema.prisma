@@ -22,7 +22,9 @@ model Quiz {
   title            String
   description      String?
   isTimerEnabled   Boolean    @default(false)
+  timerType        String     @default("GLOBAL") // "GLOBAL" or "PER_QUESTION"
   timeLimitMinutes Int?
+  timeLimitPerQuestion Int?
   shuffleQuestions Boolean    @default(false)
   shuffleAnswers   Boolean    @default(false)
   showPlayerAnalytics Boolean  @default(true)

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Bell, CheckCircle2, XCircle, Clock, ChevronRight, ChevronLeft, Maximize, Minimize, Lightbulb } from "lucide-react";
+import { BarChart3, Bell, CheckCircle2, XCircle, Clock, ChevronRight, ChevronLeft, Maximize, Minimize, Lightbulb, X } from "lucide-react";
 
 type SafeQuestion = {
   id: string;
@@ -17,7 +17,9 @@ type SafeQuiz = {
   id: string;
   title: string;
   isTimerEnabled: boolean;
+  timerType?: string;
   timeLimitMinutes: number | null;
+  timeLimitPerQuestion?: number | null;
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
   showPlayerAnalytics: boolean;
@@ -50,28 +52,22 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
     return qs;
   }, [quiz]);
 
+  const getInitialTime = useCallback(() => {
+    if (!quiz.isTimerEnabled) return null;
+    if (quiz.timerType === "PER_QUESTION") {
+      return quiz.timeLimitPerQuestion || 10;
+    }
+    return quiz.timeLimitMinutes ? quiz.timeLimitMinutes * 60 : null;
+  }, [quiz]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [timeLeft, setTimeLeft] = useState<number | null>(
-    quiz.isTimerEnabled && quiz.timeLimitMinutes ? quiz.timeLimitMinutes * 60 : null
-  );
+  const [timeLeft, setTimeLeft] = useState<number | null>(getInitialTime());
   const [submitting, setSubmitting] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
-  const [analyticsPosition, setAnalyticsPosition] = useState<{ x: number; y: number } | null>(null);
-  const analyticsDragRef = useRef<{ offsetX: number; offsetY: number; width: number; height: number } | null>(null);
 
-  const clampAnalyticsPosition = useCallback((x: number, y: number, width: number, height: number) => {
-    const margin = 8;
-    const maxX = Math.max(margin, window.innerWidth - width - margin);
-    const maxY = Math.max(margin, window.innerHeight - height - margin);
-
-    return {
-      x: Math.min(Math.max(margin, x), maxX),
-      y: Math.min(Math.max(margin, y), maxY),
-    };
-  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (submitting) return;
@@ -98,16 +94,39 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
   }, [answers, quiz.id, router, submitting]);
 
   useEffect(() => {
+    if (quiz.isTimerEnabled && quiz.timerType === "PER_QUESTION") {
+      const currentQId = preparedQuestions[currentIndex].id;
+      if (answers[currentQId] !== undefined) {
+        setTimeLeft(null); // Stop timer if already answered
+      } else {
+        setTimeLeft(quiz.timeLimitPerQuestion || 10);
+      }
+    }
+  }, [currentIndex, quiz, answers, preparedQuestions]);
+
+  useEffect(() => {
     if (timeLeft === null) return;
     if (timeLeft <= 0) {
-      const submitTimer = window.setTimeout(() => {
-        void handleSubmit();
-      }, 0);
-      return () => window.clearTimeout(submitTimer);
+      if (quiz.timerType === "PER_QUESTION") {
+        const currentQId = preparedQuestions[currentIndex].id;
+        setAnswers(prev => {
+          if (prev[currentQId] === undefined) {
+            setShowExplanation(true);
+            return { ...prev, [currentQId]: -1 }; // -1 indicates time ran out / wrong
+          }
+          return prev;
+        });
+      } else {
+        const submitTimer = window.setTimeout(() => {
+          void handleSubmit();
+        }, 0);
+        return () => window.clearTimeout(submitTimer);
+      }
+      return;
     }
     const timer = setInterval(() => setTimeLeft((t) => (t ? t - 1 : 0)), 1000);
     return () => clearInterval(timer);
-  }, [handleSubmit, timeLeft]);
+  }, [handleSubmit, timeLeft, quiz.timerType, currentIndex, preparedQuestions]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -129,57 +148,7 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  useEffect(() => {
-    if (!analyticsPosition) return;
 
-    const handleResize = () => {
-      setAnalyticsPosition((position) => {
-        if (!position) return position;
-        const dragBox = analyticsDragRef.current;
-        return clampAnalyticsPosition(position.x, position.y, dragBox?.width ?? 84, dragBox?.height ?? 150);
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [analyticsPosition, clampAnalyticsPosition]);
-
-  const handleAnalyticsPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement;
-    if (target.closest("button")) return;
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    analyticsDragRef.current = {
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-      width: rect.width,
-      height: rect.height,
-    };
-    setAnalyticsPosition(clampAnalyticsPosition(rect.left, rect.top, rect.width, rect.height));
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handleAnalyticsPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const dragBox = analyticsDragRef.current;
-    if (!dragBox) return;
-
-    event.preventDefault();
-    setAnalyticsPosition(
-      clampAnalyticsPosition(
-        event.clientX - dragBox.offsetX,
-        event.clientY - dragBox.offsetY,
-        dragBox.width,
-        dragBox.height
-      )
-    );
-  };
-
-  const handleAnalyticsPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-    analyticsDragRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  };
 
   const handleSelect = (questionId: string, originalIndex: number) => {
     // If the answer is already selected, don't allow changing it (locking mechanism for real-time feedback)
@@ -232,23 +201,23 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
         <h3 className="text-sm font-semibold uppercase text-gray-400 tracking-wider flex items-center gap-2"><BarChart3 size={16} /> Live Analytics</h3>
         <span className="pill text-primary">{accuracy}% Accuracy</span>
       </div>
-      <div className="grid grid-cols-4 gap-4">
-        <div className="stat-card text-center relative overflow-hidden">
+      <div className="flex flex-col gap-4">
+        <div className="stat-card flex flex-col justify-center text-center relative overflow-hidden bg-surface-strong border-white/10">
           <div className="absolute top-0 left-0 h-1 bg-primary transition-all duration-500" style={{ width: `${(stats.attempted / preparedQuestions.length) * 100}%` }}></div>
-          <div className="text-xs text-gray-400 mb-1">Attempted</div>
-          <div className="text-2xl font-bold">{stats.attempted}</div>
+          <div className="text-xs text-gray-400 mb-1 uppercase tracking-wider">Attempted</div>
+          <div className="text-3xl font-bold">{stats.attempted} <span className="text-base text-gray-500 font-normal">/ {preparedQuestions.length}</span></div>
         </div>
-        <div className="stat-card text-center bg-success/10 border-success/20">
-          <div className="text-xs text-success-light mb-1">Correct</div>
-          <div className="text-2xl font-bold text-success">{stats.correct}</div>
+        <div className="stat-card flex flex-col justify-center text-center bg-success/10 border-success/20">
+          <div className="text-xs text-success-light mb-1 uppercase tracking-wider">Correct</div>
+          <div className="text-3xl font-bold text-success">{stats.correct}</div>
         </div>
-        <div className="stat-card text-center bg-danger/10 border-danger/20">
-          <div className="text-xs text-danger-light mb-1">Wrong</div>
-          <div className="text-2xl font-bold text-danger">{stats.wrong}</div>
+        <div className="stat-card flex flex-col justify-center text-center bg-danger/10 border-danger/20">
+          <div className="text-xs text-danger-light mb-1 uppercase tracking-wider">Wrong</div>
+          <div className="text-3xl font-bold text-danger">{stats.wrong}</div>
         </div>
-        <div className="stat-card text-center">
-          <div className="text-xs text-gray-400 mb-1">Remaining</div>
-          <div className="text-2xl font-bold">{stats.remaining}</div>
+        <div className="stat-card flex flex-col justify-center text-center bg-surface-soft border-white/5">
+          <div className="text-xs text-gray-400 mb-1 uppercase tracking-wider">Remaining</div>
+          <div className="text-3xl font-bold text-gray-300">{stats.remaining}</div>
         </div>
       </div>
     </>
@@ -295,6 +264,9 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
         <div className="glass-panel glass-card mb-6">
           <h2 className="text-2xl font-semibold mb-6">{currentQ.text}</h2>
           <div className="flex flex-col gap-3">
+            {answers[currentQ.id] === -1 && (
+              <div className="text-danger text-sm font-semibold mb-2">Time ran out!</div>
+            )}
             {currentQ.displayOptions.map((opt) => {
               const hasAnswered = answers[currentQ.id] !== undefined;
               const isSelected = answers[currentQ.id] === opt.originalIndex;
@@ -307,7 +279,7 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
                 if (isSelected && isCorrectOption) {
                   optionClass = "is-correct";
                   Icon = <CheckCircle2 className="text-success shrink-0" />;
-                } else if (isSelected && !isCorrectOption) {
+                } else if (isSelected && !isCorrectOption && opt.originalIndex !== -1) {
                   optionClass = "is-wrong";
                   Icon = <XCircle className="text-danger shrink-0" />;
                 } else if (!isSelected && isCorrectOption) {
@@ -394,47 +366,33 @@ export function QuizPlayer({ quiz }: { quiz: SafeQuiz }) {
         )}
       </div>
       {quiz.showPlayerAnalytics && !isLast && (
-        <div
-          className={`analytics-widget ${analyticsOpen ? "is-open" : ""} ${analyticsPosition ? "is-dragged" : ""}`}
-          onPointerDown={handleAnalyticsPointerDown}
-          onPointerMove={handleAnalyticsPointerMove}
-          onPointerUp={handleAnalyticsPointerUp}
-          onPointerCancel={handleAnalyticsPointerUp}
-          style={
-            analyticsPosition
-              ? { left: analyticsPosition.x, top: analyticsPosition.y, right: "auto", transform: "none" }
-              : undefined
-          }
-        >
-          {analyticsOpen && (
-            <div
-              className="glass-panel glass-card analytics-popover animate-fade-in"
-              id="live-analytics-panel"
-            >
-              {analyticsPanel}
+        <>
+          {/* Toggle Button */}
+          <button 
+            onClick={() => setAnalyticsOpen(true)}
+            className={`fixed right-0 top-1/2 -translate-y-1/2 bg-background border border-white/10 border-r-0 rounded-l-2xl p-3 shadow-2xl transition-transform duration-300 z-40 hover:bg-surface-hover ${analyticsOpen ? 'translate-x-full' : 'translate-x-0'}`}
+            title="Open Live Analytics"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <BarChart3 size={20} className="text-primary" />
+              <div className="text-[10px] uppercase font-bold text-gray-400" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>Stats</div>
             </div>
-          )}
-          <div className="analytics-rail">
-            <button
-              type="button"
-              className="analytics-bell"
-              onClick={() => setAnalyticsOpen(true)}
-              aria-label="Show live analytics"
-            >
-              <Bell size={15} />
-            </button>
-            <button
-              type="button"
-              className="analytics-toggle"
-              onClick={() => setAnalyticsOpen((open) => !open)}
-              aria-controls="live-analytics-panel"
-              aria-expanded={analyticsOpen}
-              aria-label={analyticsOpen ? "Hide live analytics" : "Show live analytics"}
-            >
-              {analyticsOpen ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
-            </button>
+          </button>
+
+          {/* Sidebar */}
+          <div className={`fixed right-0 top-0 h-full w-80 bg-background/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${analyticsOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+             <div className="flex justify-between items-center p-6 border-b border-white/10 bg-surface/50">
+               <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><BarChart3 size={20} className="text-primary" /> Live Analytics</h3>
+               <button onClick={() => setAnalyticsOpen(false)} className="icon-btn" title="Close Analytics">
+                 <X size={20} />
+               </button>
+             </div>
+             
+             <div className="p-6 overflow-y-auto flex-1">
+               {analyticsPanel}
+             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
