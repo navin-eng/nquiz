@@ -23,6 +23,7 @@ type QuizType = {
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
   showPlayerAnalytics: boolean;
+  tags: string[];
   questions: Question[];
 };
 
@@ -39,9 +40,26 @@ export function QuizEditor({ quiz }: { quiz: QuizType }) {
     shuffleQuestions: quiz.shuffleQuestions,
     shuffleAnswers: quiz.shuffleAnswers,
     showPlayerAnalytics: quiz.showPlayerAnalytics,
+    tags: quiz.tags || [],
   });
 
   const [saving, setSaving] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+
+  const addTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const val = tagInput.trim();
+      if (val && !settings.tags.includes(val)) {
+        setSettings({ ...settings, tags: [...settings.tags, val] });
+      }
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setSettings({ ...settings, tags: settings.tags.filter(t => t !== tagToRemove) });
+  };
 
   const saveSettings = async () => {
     setSaving(true);
@@ -83,6 +101,32 @@ export function QuizEditor({ quiz }: { quiz: QuizType }) {
               className="input-field min-h-[100px] resize-y" 
               value={settings.description}
               onChange={(e) => setSettings({ ...settings, description: e.target.value })}
+            />
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Tags</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {settings.tags.map((tag, idx) => (
+                <div key={idx} className="bg-primary/20 text-primary-light border border-primary/30 rounded-full px-3 py-1 text-sm flex items-center gap-1">
+                  {tag}
+                  <button 
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-white transition-colors ml-1"
+                    title="Remove tag"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <input 
+              type="text" 
+              className="input-field" 
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={addTag}
+              placeholder="Type a tag and press Enter"
             />
           </div>
 

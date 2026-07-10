@@ -50,6 +50,7 @@ export async function PUT(
       shuffleQuestions,
       shuffleAnswers,
       showPlayerAnalytics,
+      tags,
     } = body;
 
     const quiz = await prisma.quiz.update({
@@ -66,6 +67,7 @@ export async function PUT(
         shuffleQuestions,
         shuffleAnswers,
         showPlayerAnalytics,
+        tags: Array.isArray(tags) ? tags : undefined,
       },
     });
 

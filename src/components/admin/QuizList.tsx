@@ -24,16 +24,19 @@ export function QuizList({ initialQuizzes }: { initialQuizzes: QuizWithCounts[] 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newTags, setNewTags] = useState("");
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle) return;
     
     setIsCreating(true);
+    const tagsArray = newTags.split(",").map(t => t.trim()).filter(Boolean);
+
     const res = await fetch("/api/admin/quizzes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newTitle, description: newDesc }),
+      body: JSON.stringify({ title: newTitle, description: newDesc, tags: tagsArray }),
     });
 
     if (res.ok) {
@@ -64,6 +67,7 @@ export function QuizList({ initialQuizzes }: { initialQuizzes: QuizWithCounts[] 
     setIsModalOpen(false);
     setNewTitle("");
     setNewDesc("");
+    setNewTags("");
   };
 
   return (
@@ -143,6 +147,16 @@ export function QuizList({ initialQuizzes }: { initialQuizzes: QuizWithCounts[] 
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="What is this quiz about?" 
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Tags (comma-separated)</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
+                  placeholder="e.g., math, science, kids" 
                 />
               </div>
               <div className="flex justify-end gap-3 mt-4">

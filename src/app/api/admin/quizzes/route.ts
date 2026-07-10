@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { title, description, showPlayerAnalytics } = await req.json();
+    const { title, description, showPlayerAnalytics, tags } = await req.json();
 
     if (!title) {
       return new NextResponse("Title is required", { status: 400 });
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
         title,
         description,
         showPlayerAnalytics: showPlayerAnalytics ?? true,
+        tags: Array.isArray(tags) ? tags : [],
       },
     });
 

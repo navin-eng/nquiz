@@ -28,6 +28,7 @@ model Quiz {
   shuffleQuestions Boolean    @default(false)
   shuffleAnswers   Boolean    @default(false)
   showPlayerAnalytics Boolean  @default(true)
+  tags             String[]   @default([])
   createdAt        DateTime   @default(now())
   questions        Question[]
   results          Result[]
